@@ -1,0 +1,14 @@
+d:\Desktop\C#\4\ConsoleColorGame\bin\Debug\net9.0\ConsoleColorGame.exe
+D:\Desktop\C#\4\ConsoleColorGame\bin\Debug\net9.0\ConsoleColorGame.deps.json
+D:\Desktop\C#\4\ConsoleColorGame\bin\Debug\net9.0\ConsoleColorGame.runtimeconfig.json
+d:\Desktop\C#\4\ConsoleColorGame\bin\Debug\net9.0\ConsoleColorGame.dll
+d:\Desktop\C#\4\ConsoleColorGame\bin\Debug\net9.0\ConsoleColorGame.pdb
+d:\Desktop\C#\4\ConsoleColorGame\obj\Debug\net9.0\ConsoleColorGame.GeneratedMSBuildEditorConfig.editorconfig
+d:\Desktop\C#\4\ConsoleColorGame\obj\Debug\net9.0\ConsoleColorGame.AssemblyInfoInputs.cache
+d:\Desktop\C#\4\ConsoleColorGame\obj\Debug\net9.0\ConsoleColorGame.AssemblyInfo.cs
+d:\Desktop\C#\4\ConsoleColorGame\obj\Debug\net9.0\ConsoleColorGame.csproj.CoreCompileInputs.cache
+d:\Desktop\C#\4\ConsoleColorGame\obj\Debug\net9.0\ConsoleColorGame.dll
+d:\Desktop\C#\4\ConsoleColorGame\obj\Debug\net9.0\refint\ConsoleColorGame.dll
+d:\Desktop\C#\4\ConsoleColorGame\obj\Debug\net9.0\ConsoleColorGame.pdb
+D:\Desktop\C#\4\ConsoleColorGame\obj\Debug\net9.0\ConsoleColorGame.genruntimeconfig.cache
+D:\Desktop\C#\4\ConsoleColorGame\obj\Debug\net9.0\ref\ConsoleColorGame.dll

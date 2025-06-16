@@ -1,0 +1,14 @@
+d:\Desktop\C#\5\GameFindLock\bin\Debug\net9.0\GameFindLock.exe
+D:\Desktop\C#\5\GameFindLock\bin\Debug\net9.0\GameFindLock.deps.json
+D:\Desktop\C#\5\GameFindLock\bin\Debug\net9.0\GameFindLock.runtimeconfig.json
+d:\Desktop\C#\5\GameFindLock\bin\Debug\net9.0\GameFindLock.dll
+d:\Desktop\C#\5\GameFindLock\bin\Debug\net9.0\GameFindLock.pdb
+d:\Desktop\C#\5\GameFindLock\obj\Debug\net9.0\GameFindLock.GeneratedMSBuildEditorConfig.editorconfig
+d:\Desktop\C#\5\GameFindLock\obj\Debug\net9.0\GameFindLock.AssemblyInfoInputs.cache
+d:\Desktop\C#\5\GameFindLock\obj\Debug\net9.0\GameFindLock.AssemblyInfo.cs
+d:\Desktop\C#\5\GameFindLock\obj\Debug\net9.0\GameFindLock.csproj.CoreCompileInputs.cache
+d:\Desktop\C#\5\GameFindLock\obj\Debug\net9.0\GameFindLock.dll
+d:\Desktop\C#\5\GameFindLock\obj\Debug\net9.0\refint\GameFindLock.dll
+d:\Desktop\C#\5\GameFindLock\obj\Debug\net9.0\GameFindLock.pdb
+D:\Desktop\C#\5\GameFindLock\obj\Debug\net9.0\GameFindLock.genruntimeconfig.cache
+D:\Desktop\C#\5\GameFindLock\obj\Debug\net9.0\ref\GameFindLock.dll

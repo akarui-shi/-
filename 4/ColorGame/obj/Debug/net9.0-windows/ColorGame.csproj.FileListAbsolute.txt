@@ -1,0 +1,14 @@
+d:\Desktop\C#\ColorGame\bin\Debug\net9.0-windows\ColorGame.exe
+D:\Desktop\C#\ColorGame\bin\Debug\net9.0-windows\ColorGame.deps.json
+D:\Desktop\C#\ColorGame\bin\Debug\net9.0-windows\ColorGame.runtimeconfig.json
+d:\Desktop\C#\ColorGame\bin\Debug\net9.0-windows\ColorGame.dll
+d:\Desktop\C#\ColorGame\bin\Debug\net9.0-windows\ColorGame.pdb
+d:\Desktop\C#\ColorGame\obj\Debug\net9.0-windows\ColorGame.GeneratedMSBuildEditorConfig.editorconfig
+d:\Desktop\C#\ColorGame\obj\Debug\net9.0-windows\ColorGame.AssemblyInfoInputs.cache
+d:\Desktop\C#\ColorGame\obj\Debug\net9.0-windows\ColorGame.AssemblyInfo.cs
+d:\Desktop\C#\ColorGame\obj\Debug\net9.0-windows\ColorGame.csproj.CoreCompileInputs.cache
+d:\Desktop\C#\ColorGame\obj\Debug\net9.0-windows\ColorGame.dll
+d:\Desktop\C#\ColorGame\obj\Debug\net9.0-windows\refint\ColorGame.dll
+d:\Desktop\C#\ColorGame\obj\Debug\net9.0-windows\ColorGame.pdb
+D:\Desktop\C#\ColorGame\obj\Debug\net9.0-windows\ColorGame.genruntimeconfig.cache
+D:\Desktop\C#\ColorGame\obj\Debug\net9.0-windows\ref\ColorGame.dll

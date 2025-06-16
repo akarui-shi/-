@@ -1,0 +1,14 @@
+D:\Desktop\GeometryGame\bin\Debug\net9.0-windows\GeometryGame.exe
+D:\Desktop\GeometryGame\bin\Debug\net9.0-windows\GeometryGame.deps.json
+D:\Desktop\GeometryGame\bin\Debug\net9.0-windows\GeometryGame.runtimeconfig.json
+D:\Desktop\GeometryGame\bin\Debug\net9.0-windows\GeometryGame.dll
+D:\Desktop\GeometryGame\bin\Debug\net9.0-windows\GeometryGame.pdb
+D:\Desktop\GeometryGame\obj\Debug\net9.0-windows\GeometryGame.GeneratedMSBuildEditorConfig.editorconfig
+D:\Desktop\GeometryGame\obj\Debug\net9.0-windows\GeometryGame.AssemblyInfoInputs.cache
+D:\Desktop\GeometryGame\obj\Debug\net9.0-windows\GeometryGame.AssemblyInfo.cs
+D:\Desktop\GeometryGame\obj\Debug\net9.0-windows\GeometryGame.csproj.CoreCompileInputs.cache
+D:\Desktop\GeometryGame\obj\Debug\net9.0-windows\GeometryGame.dll
+D:\Desktop\GeometryGame\obj\Debug\net9.0-windows\refint\GeometryGame.dll
+D:\Desktop\GeometryGame\obj\Debug\net9.0-windows\GeometryGame.pdb
+D:\Desktop\GeometryGame\obj\Debug\net9.0-windows\GeometryGame.genruntimeconfig.cache
+D:\Desktop\GeometryGame\obj\Debug\net9.0-windows\ref\GeometryGame.dll
