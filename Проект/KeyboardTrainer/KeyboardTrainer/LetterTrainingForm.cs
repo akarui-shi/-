@@ -20,12 +20,15 @@ namespace KeyboardTrainer
         public LetterTrainingForm() : base("Режим 2: Тренировка по буквам")
         {
             InitializeComponents();
-            KeyPress += LetterTrainingForm_KeyPress;
+            // Нажатия клавиш будут перехватываться формой
+            this.KeyPress += LetterTrainingForm_KeyPress;
             UpdateLetters();
             InitializeTimer();
             GenerateNewLetter();
         }
-
+        
+        // ... (Код InitializeComponents, Create...Panel и другие вспомогательные методы остаются прежними)
+        #region Component Initialization
         private void InitializeComponents()
         {
             var languagePanel = CreateLanguagePanel();
@@ -34,8 +37,6 @@ namespace KeyboardTrainer
             var timerPanel = CreateTimerPanel();
 
             Controls.AddRange(new Control[] { languagePanel, timerPanel, letterContainer, statsPanel });
-            KeyDown += HandleKeyDown;
-            KeyUp += HandleKeyUp;
         }
 
         private Panel CreateLanguagePanel()
@@ -55,18 +56,7 @@ namespace KeyboardTrainer
             panel.Controls.AddRange(new Control[] { languageLabel, _languageComboBox });
             return panel;
         }
-
-        private void LanguageComboBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            string selectedLang = _languageComboBox.SelectedItem.ToString();
-            if (selectedLang == _currentTrainingLang)
-                return;
-
-            _currentTrainingLang = selectedLang;
-            UpdateLetters();
-            GenerateNewLetter();
-        }
-
+        
         private Panel CreateTimerPanel()
         {
             var panel = new Panel
@@ -126,21 +116,85 @@ namespace KeyboardTrainer
             panel.Controls.AddRange(new Control[] { _correctLabel, _incorrectLabel });
             return panel;
         }
+        #endregion
+        
+        /// <summary>
+        /// Реализация метода для подсветки нужной буквы на клавиатуре.
+        /// </summary>
+        protected override void UpdateKeyboardHint()
+        {
+            _keyboardControl.ClearAllHighlights();
+            // Проверяем, что буква не пустая (может быть в момент сброса)
+            if (_currentLetter != '\0')
+            {
+                _keyboardControl.HighlightKey(_currentLetter, KeyboardControl.HighlightColor);
+            }
+        }
+
+        private void GenerateNewLetter()
+        {
+            _currentLetter = _letters[_random.Next(_letters.Length)];
+            _letterLabel.Text = _currentLetter.ToString();
+            _letterLabel.ForeColor = Color.White;
+            UpdateKeyboardHint(); // Обновляем подсказку при генерации новой буквы
+        }
+
+        private async void ProcessKeyPress(char pressedChar)
+        {
+            if (_timeLeft <= 0) return;
+
+            bool isCorrect = char.ToLower(pressedChar) == char.ToLower(_currentLetter);
+
+            // 1. Показать вспышку
+            _keyboardControl.ClearAllHighlights();
+            _keyboardControl.HighlightKey(pressedChar, isCorrect ? KeyboardControl.CorrectColor : KeyboardControl.IncorrectColor);
+            await Task.Delay(150);
+
+            // 2. Обработать ввод
+            if (isCorrect)
+            {
+                _correctCount++;
+                _correctLabel.Text = $"Правильно: {_correctCount}";
+                GenerateNewLetter(); // Новая буква -> новая подсказка
+            }
+            else
+            {
+                _incorrectCount++;
+                _incorrectLabel.Text = $"Ошибки: {_incorrectCount}";
+                _letterLabel.ForeColor = Color.OrangeRed;
+                UpdateKeyboardHint(); // Если ошибка, снова подсвечиваем ту же букву
+            }
+        }
+
+        private async void LetterTrainingForm_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (char.IsLetter(e.KeyChar))
+            {
+                ProcessKeyPress(e.KeyChar);
+            }
+        }
+
+        private void LanguageComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string selectedLang = _languageComboBox.SelectedItem.ToString();
+            if (selectedLang == _currentTrainingLang) return;
+            
+            _currentTrainingLang = selectedLang;
+            _keyboardControl.ToggleLayout();
+            UpdateLetters();
+            ResetGame();
+        }
 
         private void UpdateLetters()
         {
-            if (_currentTrainingLang == "Русский")
-                _letters = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
-            else
-                _letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            _letters = _currentTrainingLang == "Русский"
+                ? "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+                : "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         }
 
         private void InitializeTimer()
         {
-            _gameTimer = new Timer
-            {
-                Interval = 1000
-            };
+            _gameTimer = new Timer { Interval = 1000 };
             _gameTimer.Tick += GameTimer_Tick;
             _gameTimer.Start();
         }
@@ -153,46 +207,11 @@ namespace KeyboardTrainer
             if (_timeLeft <= 0)
             {
                 _gameTimer.Stop();
+                _currentLetter = '\0'; // Очищаем текущую букву
+                UpdateKeyboardHint(); // Убираем подсветку
                 ShowResults();
             }
         }
-
-        private void GenerateNewLetter()
-        {
-            _currentLetter = _letters[_random.Next(_letters.Length)];
-            _letterLabel.Text = _currentLetter.ToString();
-            _letterLabel.ForeColor = Color.White;
-        }
-
-        private void ProcessKeyPress(char key)
-        {
-            if (char.ToLower(key) == char.ToLower(_currentLetter))
-            {
-                _correctCount++;
-                _correctLabel.Text = $"Правильно: {_correctCount}";
-                GenerateNewLetter();
-            }
-            else
-            {
-                _incorrectCount++;
-                _incorrectLabel.Text = $"Ошибки: {_incorrectCount}";
-                _letterLabel.ForeColor = Color.OrangeRed;
-            }
-        }
-
-        private void LetterTrainingForm_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (char.IsLetter(e.KeyChar))
-                ProcessKeyPress(e.KeyChar);
-        }
-
-        private void HandleKeyDown(object sender, KeyEventArgs e)
-        {
-            HighlightKey(e.KeyCode, true);
-        }
-
-        private void HandleKeyUp(object sender, KeyEventArgs e) =>
-            HighlightKey(e.KeyCode, false);
 
         private void ShowResults()
         {
@@ -218,13 +237,14 @@ namespace KeyboardTrainer
             _correctLabel.Text = "Правильно: 0";
             _incorrectLabel.Text = "Ошибки: 0";
             _timerLabel.Text = $"Время: {_timeLeft} сек";
-            GenerateNewLetter();
+            GenerateNewLetter(); // Это вызовет и UpdateKeyboardHint()
             _gameTimer.Start();
         }
-
+        
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             _gameTimer?.Stop();
+            _gameTimer?.Dispose();
             base.OnFormClosing(e);
         }
     }

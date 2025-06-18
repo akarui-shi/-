@@ -1,5 +1,5 @@
 namespace KeyboardTrainer
-{ 
+{
     public abstract class BaseTrainingForm : Form
     {
         protected const int KeyboardHeight = 350;
@@ -39,53 +39,16 @@ namespace KeyboardTrainer
             if (e.Alt && e.KeyCode == Keys.ShiftKey)
             {
                 _keyboardControl.ToggleLayout();
+                UpdateKeyboardHint(); // Обновить подсказку после смены раскладки
                 e.Handled = true;
                 e.SuppressKeyPress = true;
             }
         }
 
-        protected void HighlightKey(Keys keyCode, bool highlight)
-        {
-            string keyString = keyCode.ToString().ToLower();
-            string? specialKey = null;
-
-            if (keyString.Length == 1 && char.IsLetter(keyString[0]))
-            {
-                _keyboardControl.HighlightKey(keyString, highlight);
-            }
-            else
-            {
-                specialKey = keyCode switch
-                {
-                    Keys.Space => " ",
-                    Keys.Back => "back",
-                    Keys.Enter => "enter",
-                    Keys.ShiftKey => "shift",
-                    Keys.Capital => "caps",
-                    Keys.Tab => "tab",
-                    Keys.OemQuestion => "/",
-                    Keys.OemPeriod => ".",
-                    Keys.Oemcomma => ",",
-                    Keys.OemSemicolon => ";",
-                    Keys.OemQuotes => "'",
-                    Keys.OemOpenBrackets => "[",
-                    Keys.OemCloseBrackets => "]",
-                    Keys.OemPipe => "\\",
-                    Keys.OemMinus => "-",
-                    Keys.Oemplus => "=",
-                    Keys.LControlKey => "ctrl",
-                    Keys.RControlKey => "ctrl",
-                    Keys.LWin => "win",
-                    Keys.RWin => "win",
-                    Keys.LMenu => "alt",
-                    Keys.RMenu => "altgr",
-                    Keys.Apps => "menu",
-                    _ => null
-                };
-
-                if (specialKey != null)
-                    _keyboardControl.HighlightKey(specialKey, highlight);
-            }
-        }
+        /// <summary>
+        /// Абстрактный метод, который дочерние формы должны реализовать,
+        /// чтобы обновлять подсветку-подсказку на клавиатуре.
+        /// </summary>
+        protected abstract void UpdateKeyboardHint();
     }
 }

@@ -1,17 +1,19 @@
-using Timer = System.Windows.Forms.Timer;
-
 namespace KeyboardTrainer
 {
     public class KeyboardControl : UserControl
     {
         public new enum Layout { English, Russian }
+
+        // Цвета для новой логики подсветки
+        private readonly Color _defaultKeyColor = Color.FromArgb(60, 60, 70);
+        public static readonly Color HighlightColor = Color.FromArgb(70, 70, 120); // Цвет-подсказка
+        public static readonly Color CorrectColor = Color.FromArgb(50, 150, 50);   // Зеленый для верного нажатия
+        public static readonly Color IncorrectColor = Color.FromArgb(180, 50, 50); // Красный для неверного нажатия
+
         private Layout _currentLayout = Layout.English;
         private readonly List<Button> _keyButtons = new List<Button>();
-        private readonly Color _defaultKeyColor = Color.FromArgb(60, 60, 70);
-        private readonly Color _pressedKeyColor = Color.FromArgb(100, 150, 220);
-        private readonly Timer _keyPressTimer = new Timer();
-        private string _lastPressedKey;
 
+        // Словарь для сопоставления символов и тегов клавиш
         private static readonly Dictionary<string, (string eng, string rus)> _keyMappings = new()
         {
             { "`", ("`", "ё") }, { "1", ("1", "1") }, { "2", ("2", "2") }, { "3", ("3", "3") },
@@ -28,15 +30,62 @@ namespace KeyboardTrainer
             { ",", (",", "б") }, { ".", (".", "ю") }, { "/", ("/", ".") }
         };
 
-        public event Action<string> KeyPressed;
-
         public KeyboardControl()
         {
             Size = new Size(1000, 350);
-            _keyPressTimer.Interval = 150;
-            _keyPressTimer.Tick += (s, e) => ResetKeyHighlight();
             InitializeKeyboard();
             DoubleBuffered = true;
+        }
+
+        /// <summary>
+        /// Находит тег клавиши (например, 'q') для заданного символа.
+        /// </summary>
+        private string? FindKeyTagForChar(char character)
+        {
+            string searchChar = character.ToString().ToLower();
+            foreach (var kvp in _keyMappings)
+            {
+                if (kvp.Value.eng == searchChar || kvp.Value.rus == searchChar)
+                {
+                    return kvp.Key;
+                }
+            }
+            return null; // Символ не найден на стандартной раскладке
+        }
+
+        /// <summary>
+        /// Сбрасывает цвет всех клавиш к стандартному.
+        /// </summary>
+        public void ClearAllHighlights()
+        {
+            foreach (var btn in _keyButtons)
+            {
+                btn.BackColor = _defaultKeyColor;
+            }
+        }
+
+        /// <summary>
+        /// Подсвечивает клавишу, соответствующую символу, указанным цветом.
+        /// </summary>
+        public void HighlightKey(char character, Color color)
+        {
+            string? keyTag = FindKeyTagForChar(character);
+            if (keyTag != null)
+            {
+                HighlightSpecialKey(keyTag, color);
+            }
+        }
+
+        /// <summary>
+        /// Подсвечивает специальную клавишу (Shift, Ctrl, и т.д.) по ее тегу.
+        /// </summary>
+        public void HighlightSpecialKey(string keyTag, Color color)
+        {
+            var key = keyTag.ToLower();
+            foreach (var btn in _keyButtons.Where(b => b.Tag.ToString() == key))
+            {
+                btn.BackColor = color;
+            }
         }
 
         public void ToggleLayout()
@@ -49,11 +98,13 @@ namespace KeyboardTrainer
         {
             foreach (var btn in _keyButtons)
             {
-                if (_keyMappings.TryGetValue(btn.Tag.ToString(), out var texts))
-                    btn.Text = _currentLayout == Layout.English ? texts.eng : texts.rus;
+                if (_keyMappings.TryGetValue(btn.Tag.ToString()!, out var texts))
+                    // btn.Text = (_currentLayout == Layout.English ? texts.eng : texts.rus).ToUpper();
+                    btn.Text = (_currentLayout == Layout.English ? texts.eng : texts.rus);
             }
         }
 
+        #region Initialization (внутренний код создания кнопок)
         private void InitializeKeyboard()
         {
             BackColor = Color.Transparent;
@@ -61,171 +112,73 @@ namespace KeyboardTrainer
 
             CreateRow1(startX, startY, keyHeight);
             CreateRow2(startX, startY + keyHeight + keySpacing, keyHeight);
-            CreateRow3(startX + 45, startY + 2 * (keyHeight + keySpacing), keyHeight);
-            CreateRow4(startX + 45, startY + 3 * (keyHeight + keySpacing), keyHeight);
+            CreateRow3(startX, startY + 2 * (keyHeight + keySpacing), keyHeight);
+            CreateRow4(startX, startY + 3 * (keyHeight + keySpacing), keyHeight);
             CreateRow5(startX, startY + 4 * (keyHeight + keySpacing), keyHeight);
 
             UpdateKeyTexts();
         }
 
-        private void CreateRow1(int startX, int startY, int keyHeight)
+        private void CreateRow1(int x, int y, int h)
         {
-            int x = startX;
-            AddKey("`", x, startY, 60, keyHeight); x += 66;
-
-            for (int i = 1; i <= 9; i++)
-            {
-                AddKey(i.ToString(), x, startY, 60, keyHeight);
-                x += 66;
-            }
-
-            AddKey("0", x, startY, 60, keyHeight); x += 66;
-            AddKey("-", x, startY, 60, keyHeight); x += 66;
-            AddKey("=", x, startY, 60, keyHeight); x += 66;
-            AddKey("Back", x, startY, 120, keyHeight);
+            AddKey("`", ref x, y, 60, h);
+            for (int i = 1; i <= 9; i++) { AddKey(i.ToString(), ref x, y, 60, h); }
+            AddKey("0", ref x, y, 60, h); AddKey("-", ref x, y, 60, h); AddKey("=", ref x, y, 60, h);
+            AddKey("back", ref x, y, 126, h, "←");
+        }
+        private void CreateRow2(int x, int y, int h)
+        {
+            AddKey("tab", ref x, y, 96, h);
+            "qwertyuiop[]\\".ToList().ForEach(c => AddKey(c.ToString(), ref x, y, 60, h));
+        }
+        private void CreateRow3(int x, int y, int h)
+        {
+            AddKey("caps", ref x, y, 116, h, "Caps");
+            "asdfghjkl;'".ToList().ForEach(c => AddKey(c.ToString(), ref x, y, 60, h));
+            AddKey("enter", ref x, y, 146, h, "Enter");
+        }
+        private void CreateRow4(int x, int y, int h)
+        {
+            AddKey("shift", ref x, y, 146, h, "Shift");
+            "zxcvbnm,./".ToList().ForEach(c => AddKey(c.ToString(), ref x, y, 60, h));
+            AddKey("shift", ref x, y, 176, h, "Shift");
+        }
+        private void CreateRow5(int x, int y, int h)
+        {
+            AddKey("ctrl", ref x, y, 80, h, "Ctrl");
+            AddKey("win", ref x, y, 70, h, "Win");
+            AddKey("alt", ref x, y, 80, h, "Alt");
+            // ИСПРАВЛЕНО: Ширина пробела уменьшена с 432 до 408, чтобы ряд поместился.
+            AddKey(" ", ref x, y, 408, h, "Пробел");
+            AddKey("altgr", ref x, y, 80, h, "Alt Gr");
+            AddKey("win", ref x, y, 70, h, "Win");
+            AddKey("menu", ref x, y, 80, h, "▤");
+            AddKey("ctrl", ref x, y, 80, h, "Ctrl");
         }
 
-        private void CreateRow2(int startX, int startY, int keyHeight)
-        {
-            int x = startX + 30;
-            AddKey("Tab", x, startY, 80, keyHeight); x += 86;
-            AddKey("q", x, startY, 60, keyHeight); x += 66;
-            AddKey("w", x, startY, 60, keyHeight); x += 66;
-            AddKey("e", x, startY, 60, keyHeight); x += 66;
-            AddKey("r", x, startY, 60, keyHeight); x += 66;
-            AddKey("t", x, startY, 60, keyHeight); x += 66;
-            AddKey("y", x, startY, 60, keyHeight); x += 66;
-            AddKey("u", x, startY, 60, keyHeight); x += 66;
-            AddKey("i", x, startY, 60, keyHeight); x += 66;
-            AddKey("o", x, startY, 60, keyHeight); x += 66;
-            AddKey("p", x, startY, 60, keyHeight); x += 66;
-            AddKey("[", x, startY, 60, keyHeight); x += 66;
-            AddKey("]", x, startY, 60, keyHeight); x += 66;
-            AddKey("\\", x, startY, 90, keyHeight);
-        }
-
-        private void CreateRow3(int startX, int startY, int keyHeight)
-        {
-            int x = startX;
-            AddKey("Caps", x, startY, 90, keyHeight); x += 96;
-            AddKey("a", x, startY, 60, keyHeight); x += 66;
-            AddKey("s", x, startY, 60, keyHeight); x += 66;
-            AddKey("d", x, startY, 60, keyHeight); x += 66;
-            AddKey("f", x, startY, 60, keyHeight); x += 66;
-            AddKey("g", x, startY, 60, keyHeight); x += 66;
-            AddKey("h", x, startY, 60, keyHeight); x += 66;
-            AddKey("j", x, startY, 60, keyHeight); x += 66;
-            AddKey("k", x, startY, 60, keyHeight); x += 66;
-            AddKey("l", x, startY, 60, keyHeight); x += 66;
-            AddKey(";", x, startY, 60, keyHeight); x += 66;
-            AddKey("'", x, startY, 60, keyHeight); x += 66;
-            AddKey("Enter", x, startY, 120, keyHeight);
-        }
-
-        private void CreateRow4(int startX, int startY, int keyHeight)
-        {
-            int x = startX;
-            AddKey("Shift", x, startY, 110, keyHeight); x += 116;
-            AddKey("z", x, startY, 60, keyHeight); x += 66;
-            AddKey("x", x, startY, 60, keyHeight); x += 66;
-            AddKey("c", x, startY, 60, keyHeight); x += 66;
-            AddKey("v", x, startY, 60, keyHeight); x += 66;
-            AddKey("b", x, startY, 60, keyHeight); x += 66;
-            AddKey("n", x, startY, 60, keyHeight); x += 66;
-            AddKey("m", x, startY, 60, keyHeight); x += 66;
-            AddKey(",", x, startY, 60, keyHeight); x += 66;
-            AddKey(".", x, startY, 60, keyHeight); x += 66;
-            AddKey("/", x, startY, 60, keyHeight); x += 66;
-            AddKey("Shift", x, startY, 140, keyHeight);
-        }
-
-        private void CreateRow5(int startX, int startY, int keyHeight)
-        {
-            int x = startX;
-            AddKey("Ctrl", x, startY, 80, keyHeight); x += 86;
-            AddKey("Win", x, startY, 70, keyHeight); x += 76;
-            AddKey("Alt", x, startY, 80, keyHeight); x += 86;
-            AddKey(" ", x, startY, 400, keyHeight); x += 406;
-            AddKey("AltGr", x, startY, 80, keyHeight); x += 86;
-            AddKey("Win", x, startY, 70, keyHeight); x += 76;
-            AddKey("Menu", x, startY, 80, keyHeight); x += 86;
-            AddKey("Ctrl", x, startY, 80, keyHeight);
-        }
-
-        private void AddKey(string key, int x, int y, int width, int height)
-        {
-            Button button = CreateKeyButton(key);
-            button.Location = new Point(x, y);
-            button.Size = new Size(width, height);
-            Controls.Add(button);
-        }
-
-        private Button CreateKeyButton(string key)
+        private void AddKey(string keyTag, ref int x, int y, int width, int height, string? text = null)
         {
             var button = new Button
             {
-                Text = GetKeyDisplayName(key),
-                Tag = key.ToLower(),
+                Text = text ?? keyTag.ToUpper(),
+                Tag = keyTag.ToLower(),
+                Location = new Point(x, y),
+                Size = new Size(width, height),
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 ForeColor = Color.White,
                 BackColor = _defaultKeyColor,
                 Margin = new Padding(2)
             };
-
             button.FlatAppearance.BorderSize = 1;
             button.FlatAppearance.BorderColor = Color.FromArgb(30, 30, 40);
             button.FlatAppearance.MouseOverBackColor = Color.FromArgb(80, 80, 90);
-            button.FlatAppearance.MouseDownBackColor = _pressedKeyColor;
+            button.FlatAppearance.MouseDownBackColor = Color.FromArgb(100, 150, 220);
 
-            button.Click += (s, e) => HandleVirtualKeyPress(button);
+            Controls.Add(button);
             _keyButtons.Add(button);
-            return button;
+            x += width + 6;
         }
-
-        private void HandleVirtualKeyPress(Button button)
-        {
-            string keyValue = _keyMappings.TryGetValue(button.Tag.ToString(), out var texts)
-                ? _currentLayout == Layout.English ? texts.eng : texts.rus
-                : button.Tag.ToString();
-
-            KeyPressed?.Invoke(keyValue);
-            ResetKeyHighlight();
-
-            _lastPressedKey = button.Tag.ToString();
-            HighlightKey(_lastPressedKey, true);
-            _keyPressTimer.Start();
-        }
-
-        private void ResetKeyHighlight()
-        {
-            if (!string.IsNullOrEmpty(_lastPressedKey))
-                HighlightKey(_lastPressedKey, false);
-
-            _lastPressedKey = null;
-            _keyPressTimer.Stop();
-        }
-
-        private static string GetKeyDisplayName(string key) => key switch
-        {
-            " " => "Пробел",
-            "Ctrl" => "Ctrl",
-            "Win" => "Win",
-            "Alt" => "Alt",
-            "AltGr" => "Alt Gr",
-            "Menu" => "▤",
-            "Back" => "←",
-            "Caps" => "Caps",
-            "Shift" => "Shift",
-            "Enter" => "Enter",
-            "Tab" => "Tab",
-            _ => key
-        };
-
-        public void HighlightKey(string key, bool highlight)
-        {
-            foreach (var btn in _keyButtons.Where(btn => btn.Tag.ToString() == key.ToLower()))
-                btn.BackColor = highlight ? _pressedKeyColor : _defaultKeyColor;
-        }
+        #endregion
     }
 }

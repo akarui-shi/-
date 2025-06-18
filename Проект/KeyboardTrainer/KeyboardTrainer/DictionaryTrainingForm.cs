@@ -10,7 +10,7 @@ namespace KeyboardTrainer
         private string _currentText = "";
         private int _currentPosition = 0;
         private int _totalErrors = 0;
-        private bool _isFlashing = false;
+        private bool _isTextBoxFlashing = false;
         private DateTime _startTime;
         private Dictionary<string, bool> _dictionaryTypes = new Dictionary<string, bool>();
 
@@ -19,7 +19,9 @@ namespace KeyboardTrainer
             InitializeComponents();
             LoadDictionaries();
         }
-
+        
+        // ... (Код InitializeComponents, Create...Panel, LoadDictionaries, LoadRandomText остаётся прежним)
+        #region Component Initialization and Data Loading
         private void InitializeComponents()
         {
             var dictionaryPanel = CreateDictionaryPanel();
@@ -140,8 +142,7 @@ namespace KeyboardTrainer
             };
 
             _inputTextBox.KeyPress += InputTextBox_KeyPress;
-            _inputTextBox.KeyDown += HandleKeyDown;
-            _inputTextBox.KeyUp += HandleKeyUp;
+            _inputTextBox.KeyDown += InputTextBox_KeyDown;
 
             panel.Controls.AddRange(new Control[] { _inputTextBox, inputLabel });
             return panel;
@@ -158,12 +159,12 @@ namespace KeyboardTrainer
             {
                 _currentText = "Создайте словарь для тренировки";
                 _sampleTextBox.Text = _currentText;
+                UpdateKeyboardHint();
                 return;
             }
 
             foreach (var dict in dictionaries)
             {
-                // Определяем тип словаря по содержимому (если есть хотя бы одна точка - считаем словарем предложений)
                 var content = _dictionaryManager.GetContent(dict, false);
                 bool isSentenceDict = content.Any(line => line.Contains('.'));
                 _dictionaryTypes[dict] = isSentenceDict;
@@ -175,7 +176,14 @@ namespace KeyboardTrainer
 
         private void LoadRandomText()
         {
-            if (_dictionariesComboBox.SelectedItem == null) return;
+            if (_dictionariesComboBox.SelectedItem == null)
+            {
+                _currentText = "Словарь пуст. Выберите или создайте новый.";
+                _sampleTextBox.Text = _currentText;
+                _inputTextBox.Clear();
+                UpdateKeyboardHint();
+                return;
+            }
 
             string selectedDict = _dictionariesComboBox.SelectedItem.ToString();
             bool isSentenceDict = _dictionaryTypes.TryGetValue(selectedDict, out var type) && type;
@@ -186,18 +194,14 @@ namespace KeyboardTrainer
                 _currentText = "Словарь пуст";
                 _sampleTextBox.Text = _currentText;
                 _inputTextBox.Clear();
-                return;
             }
-
-            if (isSentenceDict)
+            else if (isSentenceDict)
             {
-                // Для словаря предложений выбираем 3 случайных предложения
                 var selectedSentences = content.OrderBy(x => _random.Next()).Take(3).ToList();
-                _currentText = string.Join(" ", selectedSentences.Select(s => s.TrimEnd('.') + "."));
+                _currentText = string.Join(" ", selectedSentences.Select(s => s.Trim().TrimEnd('.') + "."));
             }
             else
             {
-                // Для обычного словаря выбираем 15 случайных слов
                 int wordsCount = Math.Min(15, content.Count);
                 _currentText = string.Join(" ", content.OrderBy(x => _random.Next()).Take(wordsCount));
             }
@@ -209,60 +213,82 @@ namespace KeyboardTrainer
             _totalErrors = 0;
             _startTime = DateTime.Now;
             UpdateSampleColors();
+            UpdateKeyboardHint();
         }
+        #endregion
 
-        private void UpdateSampleColors()
+        /// <summary>
+        /// Реализация метода для подсветки следующего символа на клавиатуре.
+        /// </summary>
+        protected override void UpdateKeyboardHint()
         {
-            _sampleTextBox.SelectAll();
-            _sampleTextBox.SelectionBackColor = _sampleTextBox.BackColor;
-            _sampleTextBox.SelectionColor = Color.Gray;
-
-            if (_currentPosition > 0)
-            {
-                _sampleTextBox.Select(0, _currentPosition);
-                _sampleTextBox.SelectionBackColor = Color.FromArgb(50, 120, 50);
-                _sampleTextBox.SelectionColor = Color.White;
-            }
-
+            _keyboardControl.ClearAllHighlights();
             if (_currentPosition < _currentText.Length)
             {
-                _sampleTextBox.Select(_currentPosition, 1);
-                _sampleTextBox.SelectionBackColor = _isFlashing ? Color.Red : Color.FromArgb(70, 70, 120);
-                _sampleTextBox.SelectionColor = Color.White;
+                char nextChar = _currentText[_currentPosition];
+                // 'Пробел' обрабатывается отдельно, т.к. его тег - " "
+                if (nextChar == ' ')
+                {
+                    _keyboardControl.HighlightSpecialKey(" ", KeyboardControl.HighlightColor);
+                }
+                else
+                {
+                    _keyboardControl.HighlightKey(nextChar, KeyboardControl.HighlightColor);
+                }
             }
-
-            _sampleTextBox.Select(0, 0);
         }
-
-        private void ProcessKeyPress(char key)
+        
+        private async void ProcessKeyPress(char pressedChar)
         {
             if (_currentPosition >= _currentText.Length) return;
 
-            if (char.ToLower(key) == char.ToLower(_currentText[_currentPosition]))
+            char expectedChar = _currentText[_currentPosition];
+            bool isCorrect = char.ToLower(pressedChar) == char.ToLower(expectedChar);
+
+            // 1. Показать вспышку на клавиатуре (красную или зеленую)
+            _keyboardControl.ClearAllHighlights();
+            var color = isCorrect ? KeyboardControl.CorrectColor : KeyboardControl.IncorrectColor;
+
+            if (pressedChar == ' ')
+                _keyboardControl.HighlightSpecialKey(" ", color);
+            else
+                _keyboardControl.HighlightKey(pressedChar, color);
+
+            await Task.Delay(150); // Длительность вспышки
+
+            // 2. Обработать ввод
+            if (isCorrect)
             {
-                _inputTextBox.AppendText(key.ToString());
+                // Используем expectedChar, чтобы сохранить регистр из исходного текста
+                _inputTextBox.AppendText(expectedChar.ToString());
                 _currentPosition++;
                 UpdateSampleColors();
 
                 if (_currentPosition == _currentText.Length)
+                {
                     ShowResults();
+                    return; // Выход, т.к. LoadRandomText сам обновит подсказку
+                }
             }
             else
             {
                 _totalErrors++;
-                FlashCurrentLetter();
+                FlashCurrentLetterInTextBox(); // Мигание в текстовом поле
             }
+
+            // 3. Вернуть подсветку-подсказку для следующего символа
+            UpdateKeyboardHint();
         }
 
-        private async void FlashCurrentLetter()
+        private async void FlashCurrentLetterInTextBox()
         {
-            if (_isFlashing || _currentPosition >= _currentText.Length) return;
+            if (_isTextBoxFlashing || _currentPosition >= _currentText.Length) return;
 
-            _isFlashing = true;
-            UpdateSampleColors();
+            _isTextBoxFlashing = true;
+            UpdateSampleColors(true); // Передаем флаг, что это мигание
             await Task.Delay(100);
-            _isFlashing = false;
-            UpdateSampleColors();
+            _isTextBoxFlashing = false;
+            UpdateSampleColors(false);
         }
 
         private void HandleBackspace()
@@ -272,43 +298,66 @@ namespace KeyboardTrainer
                 _currentPosition--;
                 _inputTextBox.Text = _inputTextBox.Text.Substring(0, _currentPosition);
                 UpdateSampleColors();
+                UpdateKeyboardHint(); // Обновить подсказку после удаления символа
             }
         }
 
-        private void InputTextBox_KeyPress(object sender, KeyPressEventArgs e)
+        private async void InputTextBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (!char.IsControl(e.KeyChar))
+            {
+                e.Handled = true; // Запрещаем RichTextBox самому обрабатывать ввод
                 ProcessKeyPress(e.KeyChar);
+            }
         }
 
-        private void HandleKeyDown(object sender, KeyEventArgs e)
+        // Обрабатываем Backspace отдельно в KeyDown
+        private void InputTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Back)
+            {
                 HandleBackspace();
-
-            HighlightKey(e.KeyCode, true);
+                e.SuppressKeyPress = true; // Подавить системный звук "бип"
+            }
         }
 
-        private void HandleKeyUp(object sender, KeyEventArgs e) =>
-            HighlightKey(e.KeyCode, false);
+        private void UpdateSampleColors(bool isFlashing = false)
+        {
+            _sampleTextBox.SelectAll();
+            _sampleTextBox.SelectionBackColor = _sampleTextBox.BackColor;
+            _sampleTextBox.SelectionColor = Color.Gray;
+
+            if (_currentPosition > 0)
+            {
+                _sampleTextBox.Select(0, _currentPosition);
+                _sampleTextBox.SelectionBackColor = Color.FromArgb(50, 120, 50); // Цвет для уже введенного текста
+                _sampleTextBox.SelectionColor = Color.White;
+            }
+
+            if (_currentPosition < _currentText.Length)
+            {
+                _sampleTextBox.Select(_currentPosition, 1);
+                // Если мигает - красный, иначе - цвет подсветки следующего символа
+                _sampleTextBox.SelectionBackColor = isFlashing ? Color.Red : Color.FromArgb(70, 70, 120);
+                _sampleTextBox.SelectionColor = Color.White;
+            }
+
+            _sampleTextBox.DeselectAll();
+        }
 
         private void ShowResults()
         {
             int totalChars = _currentText.Length;
-            int correctChars = totalChars - _totalErrors;
             double accuracy = totalChars > 0
-                ? (double)correctChars / totalChars * 100
-                : 0;
+                ? (double)(totalChars - _totalErrors) / totalChars * 100
+                : 100;
 
             TimeSpan duration = DateTime.Now - _startTime;
-            int totalMinutes = (int)duration.TotalMinutes;
-            int seconds = duration.Seconds;
-
             string stats = $"Общее количество символов: {totalChars}\n" +
-                          $"Правильно: {_currentPosition}\n" +
-                          $"Ошибки: {_totalErrors}\n" +
-                          $"Точность: {accuracy:F2}%\n" +
-                          $"Время: {totalMinutes}:{seconds:00}";
+                           $"Правильно: {totalChars - _totalErrors}\n" +
+                           $"Ошибки: {_totalErrors}\n" +
+                           $"Точность: {accuracy:F2}%\n" +
+                           $"Время: {duration:mm\\:ss}";
 
             using (var resultForm = new ResultForm("Результаты тренировки", stats))
                 resultForm.ShowDialog();

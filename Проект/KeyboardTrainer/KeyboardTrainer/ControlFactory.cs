@@ -1,5 +1,5 @@
 namespace KeyboardTrainer
-{ 
+{
     public static class ControlFactory
     {
         public static Button CreateButton(string text, int x, int y, int width, int height, Color backColor, Action<Button>? configure = null)
@@ -14,7 +14,7 @@ namespace KeyboardTrainer
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 12)
             };
-            
+
             button.FlatAppearance.BorderSize = 0;
             configure?.Invoke(button);
             return button;
@@ -30,7 +30,7 @@ namespace KeyboardTrainer
                 Location = new Point(x, y),
                 AutoSize = width == null
             };
-            
+
             if (width.HasValue) label.Size = new Size(width.Value, label.Height);
             label.TextAlign = align;
             return label;
@@ -72,7 +72,7 @@ namespace KeyboardTrainer
                 BackColor = Color.White,
                 ForeColor = Color.Black
             };
-            
+
             if (items != null) combo.Items.AddRange(items);
             return combo;
         }
